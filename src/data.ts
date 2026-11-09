@@ -22,6 +22,7 @@ export const CATEGORIES: CategoryDef[] = [
   { id: 'towns-2', label: 'Plaatsen', short: 'Plaats', description: 'Vanaf 10.000 inwoners', files: ['towns-1.json', 'towns-2.json'], area: true },
   { id: 'towns-3', label: 'Plaatsen', short: 'Plaats', description: 'Vanaf 2.000 inwoners', files: ['towns-1.json', 'towns-2.json', 'towns-3.json'], area: true },
   { id: 'water', label: 'Water en havens', short: 'Water', description: 'Havens, meren en polders', files: ['water.json'], area: false },
+  { id: 'waterways', label: 'Rivieren en kanalen', short: 'Waterweg', description: 'Rivieren, kanalen en vaargeulen', files: ['waterways.json'], area: true },
 ];
 
 export const TOWN_LEVELS = [
@@ -67,6 +68,11 @@ function loadFile(file: string): Promise<RawFeature[]> {
   return p;
 }
 
+/** Half the width of a waterway around its centre line: a pin this close counts as on the water. */
+export const WATERWAY_BAND_KM = 0.1;
+
+const isLine = (g: TargetGeometry) => g.type === 'LineString' || g.type === 'MultiLineString';
+
 export async function loadCategory(id: string): Promise<Target[]> {
   const def = categoryById(id);
   const parts = await Promise.all(def.files.map(loadFile));
@@ -75,7 +81,7 @@ export async function loadCategory(id: string): Promise<Target[]> {
     name: f.properties.name,
     hint: f.properties.hint,
     prov: f.properties.prov,
-    r: f.properties.r,
+    r: f.properties.r ?? (isLine(f.geometry) ? WATERWAY_BAND_KM : undefined),
     kind: f.properties.kind,
     category: id,
     geometry: f.geometry,
@@ -94,11 +100,15 @@ export function provinceText(t: Target): string | null {
 
 /**
  * Which scoring curve a target uses. Stations, stadiums and harbours are exact spots ("point").
- * Towns and Natura 2000 are polygons, and lakes/polders are areas even when Wikidata only gives
+ * Towns and Natura 2000 are polygons, waterways are lines where finding the right river is the
+ * challenge, and lakes/polders are areas even when Wikidata only gives
  * a rough centre point, so those all use the "area" curve.
  */
 export function targetKind(t: Target): TargetKind {
-  if (t.geometry.type !== 'Point') return 'area';
+  if (t.geometry.type !== 'Point') return 'area'; // polygons and waterway lines
   if ((t.r ?? 0) > 0 || t.kind === 'meer' || t.kind === 'polder') return 'area';
   return 'point';
 }
+
+/** True for rivers, canals and channels (drawn and measured as lines). */
+export const isWaterway = (t: Target) => isLine(t.geometry);

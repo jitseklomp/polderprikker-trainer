@@ -32,12 +32,18 @@ export async function fetchRetry(url, opts = {}, tries = 5) {
 }
 
 /** Run a SPARQL query against query.wikidata.org and return bindings flattened to {var: value}. */
-export async function sparql(query, tries = 4) {
-  const url = 'https://query.wikidata.org/sparql?query=' + encodeURIComponent(query);
+export async function sparql(query, tries = 4, method = 'GET') {
+  // POST for long queries (big VALUES lists), which would exceed the URL length limit.
+  const post = method === 'POST';
+  const url = post ? 'https://query.wikidata.org/sparql' : 'https://query.wikidata.org/sparql?query=' + encodeURIComponent(query);
   for (let i = 0; ; i++) {
     let text = '';
     try {
-      const res = await fetchRetry(url, { headers: { Accept: 'application/sparql-results+json' } });
+      const res = await fetchRetry(url, {
+        method,
+        body: post ? new URLSearchParams({ query }) : undefined,
+        headers: { Accept: 'application/sparql-results+json' },
+      });
       text = await res.text();
       const json = JSON.parse(text);
       return json.results.bindings.map((b) => Object.fromEntries(Object.entries(b).map(([k, v]) => [k, v.value])));

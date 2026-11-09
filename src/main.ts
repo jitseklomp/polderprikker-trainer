@@ -2,7 +2,7 @@ import './styles.css';
 import { createMap } from './map.ts';
 import { measure, type LonLat } from './geo.ts';
 import { scoreForDistance, formatKm, verdict } from './scoring.ts';
-import { CATEGORIES, TOWN_LEVELS, categoryById, provinceText, targetKind, type Target } from './data.ts';
+import { CATEGORIES, TOWN_LEVELS, categoryById, provinceText, targetKind, isWaterway, type Target } from './data.ts';
 import { TargetDeck } from './game.ts';
 import { loadStats, recordAttempt, resetStats } from './stats.ts';
 import { readJSON, writeJSON } from './storage.ts';
@@ -23,6 +23,7 @@ const PICKER = [
   { key: 'stadiums', label: 'Stadions', desc: 'Eredivisie 2026/27' },
   { key: 'natura2000', label: 'Natura 2000', desc: '162 natuurgebieden' },
   { key: 'water', label: 'Water en havens', desc: 'Havens, meren, polders' },
+  { key: 'waterways', label: 'Rivieren en kanalen', desc: '375 waterwegen en vaargeulen' },
 ];
 
 const selectedCategoryIds = () => prefs.cats.map((k) => (k === 'towns' ? prefs.townLevel : k));
@@ -79,7 +80,8 @@ function renderSession() {
 
 function showTarget(t: Target) {
   const def = categoryById(t.category);
-  const kindLabel = t.kind === 'haven' ? 'Haven' : t.kind === 'meer' ? 'Meer' : t.kind === 'polder' ? 'Polder' : def.short;
+  const KIND_LABELS: Record<string, string> = { haven: 'Haven', meer: 'Meer', polder: 'Polder', rivier: 'Rivier', kanaal: 'Kanaal', vaargeul: 'Vaargeul' };
+  const kindLabel = (t.kind && KIND_LABELS[t.kind]) || def.short;
   $('target-cat').textContent = kindLabel;
   $('target-name').textContent = t.name;
   const hint = $('target-hint');
@@ -130,11 +132,14 @@ function confirm() {
 
   const isArea = current.geometry.type !== 'Point' || (current.r ?? 0) > 0;
   $('verdict').textContent = verdict(m.km, kind);
+  const water = isWaterway(current);
   $('distance').textContent = m.inside
-    ? isArea
-      ? 'Binnen het gebied'
-      : 'Raak'
-    : `${formatKm(m.km)} ${isArea ? 'van de rand' : 'ernaast'}`;
+    ? water
+      ? 'Op het water'
+      : isArea
+        ? 'Binnen het gebied'
+        : 'Raak'
+    : `${formatKm(m.km)} ${water ? 'van het water' : isArea ? 'van de rand' : 'ernaast'}`;
   $('points').textContent = String(score);
   const fill = $('meter-fill');
   fill.style.width = '0';

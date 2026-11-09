@@ -79,3 +79,23 @@ export function provincesOfArea(provs, geometry, minShare = 0.1) {
     .sort((a, b) => b[1] - a[1])
     .map(([name]) => name);
 }
+
+/**
+ * Provinces a line (given as sample points) runs through, largest share first. Only points that
+ * lie inside a province count, so stretches abroad or at sea are ignored.
+ */
+export function provincesOfLine(provs, points, minShare = 0.1) {
+  const counts = new Map();
+  let total = 0;
+  for (const p of points) {
+    const name = containing(provs, p);
+    if (!name) continue;
+    counts.set(name, (counts.get(name) || 0) + 1);
+    total++;
+  }
+  if (!total) return [];
+  return [...counts.entries()]
+    .filter(([, n]) => n / total >= minShare)
+    .sort((a, b) => b[1] - a[1])
+    .map(([name]) => name);
+}

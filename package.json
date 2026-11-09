@@ -13,7 +13,8 @@
     "data:stadiums": "node scripts/build-stadiums.mjs",
     "data:natura2000": "node scripts/build-natura2000.mjs",
     "data:towns": "node --max-old-space-size=6000 scripts/build-towns.mjs",
-    "data:water": "node scripts/build-water.mjs"
+    "data:water": "node scripts/build-water.mjs",
+    "data:waterways": "node scripts/build-waterways.mjs"
   },
   "dependencies": {
     "leaflet": "1.9.4"

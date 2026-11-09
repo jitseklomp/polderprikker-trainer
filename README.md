@@ -13,6 +13,7 @@ This is a standalone training app with its own design. It is not affiliated with
 | Natura 2000 | RVO Natura2000 WFS (PDOK), merged per area | polygon | 100 KB |
 | Plaatsen (3 levels) | BAG woonplaatsen (PDOK) + CBS Wijk- en Buurtkaart 2024 for population | polygon | 80 to 690 KB |
 | Water en havens | Wikidata: harbours, lakes, polders | point, optionally with radius | 45 KB |
+| Rivieren en kanalen | NWB Vaarwegen (Rijkswaterstaat, via PDOK), classified via Wikidata | line | 90 KB |
 
 A category is only downloaded once you select it. Town levels are cumulative: Makkelijk is 50,000+ inhabitants, Gemiddeld 10,000+, Moeilijk 2,000+.
 
@@ -20,7 +21,7 @@ A category is only downloaded once you select it. Town levels are cumulative: Ma
 
 There are two curves, both of the form `1000 / (1 + (d / half)^steepness)`, where d is the distance in km.
 
-**Areas** (towns, Natura 2000, lakes, polders): `half = 15`, `steepness = 2.5`. The score stays close to 1000 for the first few kilometres outside the boundary, drops to half at 15 km, then tails off gradually.
+**Areas** (towns, Natura 2000, lakes, polders, waterways): `half = 15`, `steepness = 2.5`. The score stays close to 1000 for the first few kilometres outside the boundary, drops to half at 15 km, then tails off gradually.
 
 **Points** (stations, stadiums, harbours): `half = 8`, `steepness = 1.5`. Every metre counts from the start: only a pin within about 50 m scores 1000.
 
@@ -31,7 +32,11 @@ There are two curves, both of the form `1000 / (1 + (d / half)^steepness)`, wher
 
 The values are set in `CURVES` in `src/scoring.ts`.
 
-For areas, d = 0 if the pin falls inside the polygon; otherwise d is the distance to the nearest edge. Lakes and polders from Wikidata are only points. When Wikidata gives an area (P2046), the target is scored as a circle of that same area.
+For areas, d = 0 if the pin falls inside the polygon; otherwise d is the distance to the nearest edge. For waterways, d is the distance to the centre line minus 100 m, so a pin on the water scores 1000. Lakes and polders from Wikidata are only points. When Wikidata gives an area (P2046), the target is scored as a circle of that same area.
+
+## Waterways
+
+NWB Vaarwegen only covers navigable water: the big rivers, canals and navigable smaller rivers, plus the tidal channels in the Wadden Sea and the Delta. Small non-navigable rivers (Dinkel, Berkel, Geul, Dommel) are not in it. NWB names say nothing about what a waterway is, so the build script matches them against Wikidata (river, canal, channel). Names that are clearly tidal channels ("-gat", "-stroom", "-geul") are kept as well. Harbours, lakes, North Sea shipping routes and sections outside the Dutch provinces are dropped. A few NWB names that differ from the usual name are mapped by hand (`ALIASES` in `scripts/build-waterways.mjs`).
 
 ## Development
 

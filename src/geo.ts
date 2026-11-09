@@ -1,4 +1,4 @@
-// Small geometry toolkit: distance from a pin to a point, a circle or a (multi)polygon.
+// Small geometry toolkit: distance from a pin to a point, a circle, a (multi)line or a (multi)polygon.
 // Uses a local equirectangular projection around the pin; error is negligible at Dutch scales.
 
 export type LonLat = [number, number];
@@ -8,7 +8,9 @@ type Polygon = Ring[];
 export type TargetGeometry =
   | { type: 'Point'; coordinates: LonLat }
   | { type: 'Polygon'; coordinates: Polygon }
-  | { type: 'MultiPolygon'; coordinates: Polygon[] };
+  | { type: 'MultiPolygon'; coordinates: Polygon[] }
+  | { type: 'LineString'; coordinates: LonLat[] }
+  | { type: 'MultiLineString'; coordinates: LonLat[][] };
 
 export interface Measure {
   /** Distance in km from the pin to the target (0 when inside an area). */
@@ -51,33 +53,37 @@ function polygons(g: TargetGeometry): Polygon[] {
   return [];
 }
 
-/** Distance from pin to the nearest edge of any ring, plus the nearest point (lon/lat). */
-function nearestOnRings(p: LonLat, polys: Polygon[]): { km: number; nearest: LonLat } {
+function linePaths(g: TargetGeometry): LonLat[][] {
+  if (g.type === 'LineString') return [g.coordinates];
+  if (g.type === 'MultiLineString') return g.coordinates;
+  return [];
+}
+
+/** Distance from pin to the nearest segment of any path (polygon ring or line), plus that nearest point. */
+function nearestOnPaths(p: LonLat, paths: LonLat[][]): { km: number; nearest: LonLat } {
   const kx = Math.cos(p[1] * toRad) * R * toRad; // km per degree lon
   const ky = R * toRad; // km per degree lat
   let best = Infinity;
   let bx = 0;
   let by = 0;
-  for (const poly of polys) {
-    for (const ring of poly) {
-      for (let i = 0; i < ring.length - 1; i++) {
-        const ax = (ring[i][0] - p[0]) * kx;
-        const ay = (ring[i][1] - p[1]) * ky;
-        const cx = (ring[i + 1][0] - p[0]) * kx;
-        const cy = (ring[i + 1][1] - p[1]) * ky;
-        const dx = cx - ax;
-        const dy = cy - ay;
-        const len2 = dx * dx + dy * dy;
-        let t = len2 > 0 ? -(ax * dx + ay * dy) / len2 : 0;
-        t = Math.max(0, Math.min(1, t));
-        const qx = ax + t * dx;
-        const qy = ay + t * dy;
-        const d2 = qx * qx + qy * qy;
-        if (d2 < best) {
-          best = d2;
-          bx = qx;
-          by = qy;
-        }
+  for (const path of paths) {
+    for (let i = 0; i < path.length - 1; i++) {
+      const ax = (path[i][0] - p[0]) * kx;
+      const ay = (path[i][1] - p[1]) * ky;
+      const cx = (path[i + 1][0] - p[0]) * kx;
+      const cy = (path[i + 1][1] - p[1]) * ky;
+      const dx = cx - ax;
+      const dy = cy - ay;
+      const len2 = dx * dx + dy * dy;
+      let t = len2 > 0 ? -(ax * dx + ay * dy) / len2 : 0;
+      t = Math.max(0, Math.min(1, t));
+      const qx = ax + t * dx;
+      const qy = ay + t * dy;
+      const d2 = qx * qx + qy * qy;
+      if (d2 < best) {
+        best = d2;
+        bx = qx;
+        by = qy;
       }
     }
   }
@@ -86,7 +92,8 @@ function nearestOnRings(p: LonLat, polys: Polygon[]): { km: number; nearest: Lon
 
 /**
  * Measure how far the pin is from the target.
- * `radiusKm` turns a point into a disc (used for lakes/polders where only a point plus an area is known).
+ * `radiusKm` widens the target: it turns a point into a disc (lakes/polders where only a point plus
+ * an area is known) and a line into a band (a river's centre line plus half its width).
  */
 export function measure(pin: LonLat, g: TargetGeometry, radiusKm = 0): Measure {
   if (g.type === 'Point') {
@@ -97,9 +104,14 @@ export function measure(pin: LonLat, g: TargetGeometry, radiusKm = 0): Measure {
     const f = radiusKm / d; // point on the circle towards the pin
     return { km: d - radiusKm, nearest: [c[0] + (pin[0] - c[0]) * f, c[1] + (pin[1] - c[1]) * f], inside: false };
   }
+  if (g.type === 'LineString' || g.type === 'MultiLineString') {
+    const n = nearestOnPaths(pin, linePaths(g));
+    if (n.km <= radiusKm) return { km: 0, nearest: pin, inside: true };
+    return { km: n.km - radiusKm, nearest: n.nearest, inside: false };
+  }
   const polys = polygons(g);
   if (polys.some((poly) => inPolygon(pin, poly))) return { km: 0, nearest: pin, inside: true };
-  return { ...nearestOnRings(pin, polys), inside: false };
+  return { ...nearestOnPaths(pin, polys.flat()), inside: false };
 }
 
 export function bboxOf(g: TargetGeometry): [number, number, number, number] {
@@ -111,6 +123,7 @@ export function bboxOf(g: TargetGeometry): [number, number, number, number] {
     if (c[1] > maxY) maxY = c[1];
   };
   if (g.type === 'Point') visit(g.coordinates);
+  else if (g.type === 'LineString' || g.type === 'MultiLineString') for (const l of linePaths(g)) l.forEach(visit);
   else for (const poly of polygons(g)) for (const ring of poly) ring.forEach(visit);
   return [minX, minY, maxX, maxY];
 }

@@ -159,6 +159,16 @@ export function createMap(el: HTMLElement): MapApi {
         L.marker(c, { icon: answerIcon, interactive: false, keyboard: false })
           .bindTooltip(label, { permanent: true, direction: 'top', offset: [0, -18], className: 'sw-label' })
           .addTo(roundLayer);
+      } else if (target.type === 'LineString' || target.type === 'MultiLineString') {
+        // waterway: dark halo under a bright line so it reads on any imagery
+        const feature = { type: 'Feature', properties: {}, geometry: target } as GeoJSON.Feature;
+        L.geoJSON(feature, { style: { className: 'sw-water-halo' }, interactive: false }).addTo(roundLayer);
+        L.geoJSON(feature, { style: { className: 'sw-water' }, interactive: false }).addTo(roundLayer);
+        // label where the miss line meets the water (or at the pin when it is on the water)
+        L.tooltip({ permanent: true, direction: 'top', offset: [0, -10], className: 'sw-label' })
+          .setLatLng(nearLL)
+          .setContent(label)
+          .addTo(roundLayer);
       } else {
         const shape = L.geoJSON({ type: 'Feature', properties: {}, geometry: target } as GeoJSON.Feature, {
           style: { className: 'sw-area' },

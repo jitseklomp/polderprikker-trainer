@@ -91,3 +91,31 @@ test('formatKm', () => {
   assert.equal(formatKm(3.25), '3,3 km');
   assert.equal(formatKm(42.4), '42 km');
 });
+
+const river: TargetGeometry = {
+  type: 'MultiLineString',
+  coordinates: [
+    [[5, 52], [5.1, 52]],
+    [[5.1, 52], [5.1, 52.1]],
+  ],
+};
+
+test('line: pin within the band counts as on the water', () => {
+  const m = measure([5.05, 52.0005], river, 0.1); // ~55 m from the centre line
+  assert.equal(m.inside, true);
+  assert.equal(m.km, 0);
+});
+
+test('line: distance to the nearest segment minus the band', () => {
+  const pin: [number, number] = [5.2, 52.05]; // east of the second, north-south section
+  const m = measure(pin, river, 0.1);
+  const toCentre = haversineKm(pin, [5.1, 52.05]);
+  assert.equal(m.inside, false);
+  assert.ok(Math.abs(m.km - (toCentre - 0.1)) < 0.05, `${m.km} vs ${toCentre - 0.1}`);
+  assert.ok(Math.abs(m.nearest[0] - 5.1) < 1e-6 && Math.abs(m.nearest[1] - 52.05) < 1e-6);
+});
+
+test('line: nearest point can be an end point', () => {
+  const m = measure([4.9, 52], river, 0);
+  assert.ok(Math.abs(m.nearest[0] - 5) < 1e-9 && Math.abs(m.nearest[1] - 52) < 1e-9);
+});
