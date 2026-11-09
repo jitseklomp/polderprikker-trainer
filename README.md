@@ -1,4 +1,4 @@
-# Speldwerk (polderprikker-trainer)
+# Speldwerk
 
 A mobile-first training tool for Dutch map knowledge. You get a target, place a pin on an unlabelled aerial photo of the Netherlands, confirm it, and see how far off you were. It runs endlessly, with no daily limit. The interface is in Dutch.
 

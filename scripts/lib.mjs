@@ -8,7 +8,7 @@ export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 export const OUT_DIR = join(ROOT, 'public', 'data');
 export const CACHE_DIR = join(ROOT, 'scripts', '.cache');
 
-const UA = 'polderprikker-trainer-build/0.1 (https://github.com/jitseklomp/polderprikker-trainer)';
+const UA = 'speldwerk-build/0.1 (https://github.com/jitseklomp/speldwerk)';
 
 async function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));

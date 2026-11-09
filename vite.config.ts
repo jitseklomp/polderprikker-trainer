@@ -4,7 +4,7 @@ import { defineConfig } from 'vite';
 // reads data files the browser cached from the previous version (GitHub Pages caches for 10 min).
 const BUILD_ID = process.env.GITHUB_SHA?.slice(0, 8) ?? Date.now().toString(36);
 
-// Relative base so the build works on GitHub Pages under /polderprikker-trainer/ and locally.
+// Relative base so the build works on GitHub Pages under /speldwerk/ and locally.
 export default defineConfig({
   base: './',
   define: { __BUILD_ID__: JSON.stringify(BUILD_ID) },
