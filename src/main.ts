@@ -44,6 +44,19 @@ ro.observe($('panel'));
 $('zoom-in').addEventListener('click', () => mapApi.zoomBy(1));
 $('zoom-out').addEventListener('click', () => mapApi.zoomBy(-1));
 
+// Labels toggle: on by default after answering; your choice sticks for the rest of the session.
+let labelsOn = true;
+const labelsBtn = $<HTMLButtonElement>('labels-btn');
+const applyLabels = () => {
+  labelsBtn.setAttribute('aria-pressed', String(labelsOn));
+  labelsBtn.setAttribute('aria-label', labelsOn ? 'Plaatsnamen verbergen' : 'Plaatsnamen tonen');
+  mapApi.setLabels(labelsOn);
+};
+labelsBtn.addEventListener('click', () => {
+  labelsOn = !labelsOn;
+  applyLabels();
+});
+
 // ---------- game state ----------
 type Phase = 'setup' | 'aim' | 'result';
 let phase: Phase = 'setup';
@@ -80,6 +93,7 @@ function nextRound() {
   current = deck.next();
   pin = null;
   mapApi.clearRound();
+  labelsBtn.hidden = true;
   mapApi.setPinEnabled(true);
   mapApi.resetView();
   showTarget(current);
@@ -130,6 +144,8 @@ function confirm() {
   actionBtn.classList.add('next');
   actionBtn.disabled = false;
   syncHeights();
+  labelsBtn.hidden = false;
+  applyLabels();
   mapApi.showAnswer(pin, current.geometry, m.nearest, current.hint ? `${current.name} (${current.hint})` : current.name, current.r ?? 0);
 }
 

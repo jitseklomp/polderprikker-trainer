@@ -209,6 +209,24 @@ button {
   gap: 8px;
 }
 
+.labels-btn {
+  order: -1;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.labels-btn[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+@media (prefers-color-scheme: dark) {
+  .labels-btn[aria-pressed='true'] {
+    background: #f1ecdf;
+    color: #14211c;
+  }
+}
+
 .zoom-btn {
   width: 48px;
   height: 48px;

@@ -28,6 +28,8 @@ export interface MapApi {
   onPin(cb: (ll: LonLat) => void): void;
   setPinEnabled(on: boolean): void;
   clearRound(): void;
+  /** Show or hide the place-name/road reference layer (only used after answering). */
+  setLabels(on: boolean): void;
   showAnswer(pin: LonLat, target: TargetGeometry, nearest: LonLat, label: string, radiusKm?: number): void;
   resetView(): void;
   zoomBy(delta: number): void;
@@ -65,6 +67,24 @@ export function createMap(el: HTMLElement): MapApi {
     bounds: NL_BOUNDS,
     attribution: 'Luchtfoto: <a href="https://www.pdok.nl/" target="_blank" rel="noopener">PDOK</a> / Beeldmateriaal Nederland (CC BY 4.0)',
   }).addTo(map);
+
+  // Reference labels (place names, roads, borders), shown only after answering so you can see
+  // what you actually hit. Own pane: above the imagery, below the answer outline and markers.
+  map.createPane('labels');
+  const labelsPane = map.getPane('labels')!;
+  labelsPane.style.zIndex = '350';
+  labelsPane.style.pointerEvents = 'none';
+  const esriRef = (service: string, attribution?: string) =>
+    L.tileLayer(`https://server.arcgisonline.com/ArcGIS/rest/services/Reference/${service}/MapServer/tile/{z}/{y}/{x}`, {
+      pane: 'labels',
+      maxZoom: 19,
+      maxNativeZoom: 18,
+      attribution,
+    });
+  const labelsLayer = L.layerGroup([
+    esriRef('World_Transportation'),
+    esriRef('World_Boundaries_and_Places', 'Labels: Esri, HERE, Garmin'),
+  ]);
 
   const roundLayer = L.layerGroup().addTo(map);
   let pinMarker: L.Marker | null = null;
@@ -120,7 +140,12 @@ export function createMap(el: HTMLElement): MapApi {
     },
     clearRound() {
       roundLayer.clearLayers();
+      labelsLayer.remove();
       pinMarker = null;
+    },
+    setLabels(on) {
+      if (on) labelsLayer.addTo(map);
+      else labelsLayer.remove();
     },
     showAnswer(pin, target, nearest, label, radiusKm = 0) {
       const pinLL = L.latLng(pin[1], pin[0]);
