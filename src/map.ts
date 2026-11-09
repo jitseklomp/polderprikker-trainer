@@ -28,7 +28,7 @@ export interface MapApi {
   onPin(cb: (ll: LonLat) => void): void;
   setPinEnabled(on: boolean): void;
   clearRound(): void;
-  /** Show or hide the place-name/road reference layer (only used after answering). */
+  /** Show or hide the place-name reference layer (only used after answering). */
   setLabels(on: boolean): void;
   showAnswer(pin: LonLat, target: TargetGeometry, nearest: LonLat, label: string, radiusKm?: number): void;
   resetView(): void;
@@ -68,7 +68,7 @@ export function createMap(el: HTMLElement): MapApi {
     attribution: 'Luchtfoto: <a href="https://www.pdok.nl/" target="_blank" rel="noopener">PDOK</a> / Beeldmateriaal Nederland (CC BY 4.0)',
   }).addTo(map);
 
-  // Reference labels (place names, roads, borders), shown only after answering so you can see
+  // Reference labels (place names and borders, no roads), shown only after answering so you can see
   // what you actually hit. Own pane: above the imagery, below the answer outline and markers.
   map.createPane('labels');
   const labelsPane = map.getPane('labels')!;
@@ -81,10 +81,7 @@ export function createMap(el: HTMLElement): MapApi {
       maxNativeZoom: 18,
       attribution,
     });
-  const labelsLayer = L.layerGroup([
-    esriRef('World_Transportation'),
-    esriRef('World_Boundaries_and_Places', 'Labels: Esri, HERE, Garmin'),
-  ]);
+  const labelsLayer = L.layerGroup([esriRef('World_Boundaries_and_Places', 'Labels: Esri, HERE, Garmin')]);
 
   const roundLayer = L.layerGroup().addTo(map);
   let pinMarker: L.Marker | null = null;
@@ -182,7 +179,7 @@ export function createMap(el: HTMLElement): MapApi {
       const top = parseFloat(style.getPropertyValue('--top-h')) || 120;
       const bottom = parseFloat(style.getPropertyValue('--panel-h')) || 200;
       map.flyToBounds(bounds, {
-        paddingTopLeft: [40, top + 30],
+        paddingTopLeft: [40, top + 64], // extra room for the name label above the answer
         paddingBottomRight: [56, bottom + 30],
         maxZoom: 15,
         duration: 0.8,
