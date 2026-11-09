@@ -1,4 +1,5 @@
 import type { TargetGeometry } from './geo.ts';
+import type { TargetKind } from './scoring.ts';
 
 export interface CategoryDef {
   id: string;
@@ -87,4 +88,15 @@ export function provinceText(t: Target): string | null {
   if (p.length === 1) return `in provincie ${p[0]}`;
   if (p.length > 3) return 'in meerdere provincies';
   return `in de provincies ${p.slice(0, -1).join(', ')} en ${p[p.length - 1]}`;
+}
+
+/**
+ * Which scoring curve a target uses. Stations, stadiums and harbours are exact spots ("point").
+ * Towns and Natura 2000 are polygons, and lakes/polders are areas even when Wikidata only gives
+ * a rough centre point, so those all use the "area" curve.
+ */
+export function targetKind(t: Target): TargetKind {
+  if (t.geometry.type !== 'Point') return 'area';
+  if ((t.r ?? 0) > 0 || t.kind === 'meer' || t.kind === 'polder') return 'area';
+  return 'point';
 }

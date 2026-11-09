@@ -18,15 +18,18 @@ A category is only downloaded once you select it. Town levels are cumulative: Ma
 
 ## Scoring
 
-`score = 1000 / (1 + (d / 15)^2.5)`, where d is the distance in km.
+There are two curves, both of the form `1000 / (1 + (d / half)^steepness)`, where d is the distance in km.
 
-This is an S-curve. The score stays close to 1000 for the first few kilometres, drops to half at 15 km, then tails off gradually.
+**Areas** (towns, Natura 2000, lakes, polders): `half = 15`, `steepness = 2.5`. The score stays close to 1000 for the first few kilometres outside the boundary, drops to half at 15 km, then tails off gradually.
 
-| distance | 0.5 km | 2 km | 5 km | 10 km | 15 km | 20 km | 30 km | 50 km | 100 km |
-|---|---|---|---|---|---|---|---|---|---|
-| score | 1000 | 994 | 940 | 734 | 500 | 328 | 150 | 47 | 9 |
+**Points** (stations, stadiums, harbours): `half = 8`, `steepness = 1.5`. Every metre counts from the start: only a pin within about 50 m scores 1000.
 
-To tune it, change `HALF_KM` (where you get half the points) or `STEEPNESS` (how sharp the drop around that point is) in `src/scoring.ts`.
+| distance | 0.1 km | 0.7 km | 2 km | 5 km | 10 km | 15 km | 30 km | 50 km |
+|---|---|---|---|---|---|---|---|---|
+| area | 1000 | 1000 | 994 | 940 | 734 | 500 | 150 | 47 |
+| point | 999 | 975 | 889 | 669 | 417 | 280 | 121 | 60 |
+
+The values are set in `CURVES` in `src/scoring.ts`.
 
 For areas, d = 0 if the pin falls inside the polygon; otherwise d is the distance to the nearest edge. Lakes and polders from Wikidata are only points. When Wikidata gives an area (P2046), the target is scored as a circle of that same area.
 

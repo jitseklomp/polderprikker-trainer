@@ -3,28 +3,42 @@ import assert from 'node:assert/strict';
 import { scoreForDistance, formatKm, verdict } from '../src/scoring.ts';
 import { measure, haversineKm, type TargetGeometry } from '../src/geo.ts';
 
-test('score curve: S-shaped taper, half at 15 km', () => {
+test('area curve: flat top, half at 15 km', () => {
   assert.equal(scoreForDistance(0), 1000);
   assert.equal(scoreForDistance(0.5), 1000);
   assert.equal(scoreForDistance(2), 994);
   assert.equal(scoreForDistance(5), 940);
   assert.equal(scoreForDistance(10), 734);
   assert.equal(scoreForDistance(15), 500);
-  assert.equal(scoreForDistance(30), 150);
   assert.equal(scoreForDistance(50), 47);
-  assert.ok(scoreForDistance(100) < 10);
-  // never increases with distance
-  let prev = 1001;
-  for (let d = 0; d <= 200; d += 0.25) {
-    const s = scoreForDistance(d);
-    assert.ok(s <= prev, `not monotonic at ${d}`);
-    prev = s;
+});
+
+test('point curve: drops right away, half at 8 km', () => {
+  assert.equal(scoreForDistance(0, 'point'), 1000);
+  assert.equal(scoreForDistance(0.04, 'point'), 1000);
+  assert.ok(scoreForDistance(0.695, 'point') < 1000, '695 m from a station is not perfect');
+  assert.equal(scoreForDistance(0.7, 'point'), 975);
+  assert.equal(scoreForDistance(2, 'point'), 889);
+  assert.equal(scoreForDistance(8, 'point'), 500);
+  assert.equal(scoreForDistance(50, 'point'), 60);
+});
+
+test('both curves never increase with distance', () => {
+  for (const kind of ['area', 'point'] as const) {
+    let prev = 1001;
+    for (let d = 0; d <= 200; d += 0.05) {
+      const s = scoreForDistance(d, kind);
+      assert.ok(s <= prev, `${kind} not monotonic at ${d}`);
+      prev = s;
+    }
   }
 });
 
-test('verdict is based on distance', () => {
+test('verdict is based on distance and target kind', () => {
   assert.equal(verdict(0), 'Midden in de roos');
-  assert.equal(verdict(1.5), 'Heel dichtbij');
+  assert.equal(verdict(0.3), 'Midden in de roos');
+  assert.equal(verdict(0.3, 'point'), 'Heel dichtbij');
+  assert.equal(verdict(0.05, 'point'), 'Midden in de roos');
   assert.equal(verdict(12), 'In de buurt');
   assert.equal(verdict(80), 'Ver mis');
 });

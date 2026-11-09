@@ -2,7 +2,7 @@ import './styles.css';
 import { createMap } from './map.ts';
 import { measure, type LonLat } from './geo.ts';
 import { scoreForDistance, formatKm, verdict } from './scoring.ts';
-import { CATEGORIES, TOWN_LEVELS, categoryById, provinceText, type Target } from './data.ts';
+import { CATEGORIES, TOWN_LEVELS, categoryById, provinceText, targetKind, type Target } from './data.ts';
 import { TargetDeck } from './game.ts';
 import { loadStats, recordAttempt, resetStats } from './stats.ts';
 import { readJSON, writeJSON } from './storage.ts';
@@ -121,14 +121,15 @@ function confirm() {
   phase = 'result';
   mapApi.setPinEnabled(false);
   const m = measure(pin, current.geometry, current.r ?? 0);
-  const score = scoreForDistance(m.km);
+  const kind = targetKind(current);
+  const score = scoreForDistance(m.km, kind);
   session.rounds += 1;
   session.total += score;
   recordAttempt(current.category, { name: current.name, hint: current.hint, km: m.km, score });
   renderSession();
 
   const isArea = current.geometry.type !== 'Point' || (current.r ?? 0) > 0;
-  $('verdict').textContent = verdict(m.km);
+  $('verdict').textContent = verdict(m.km, kind);
   $('distance').textContent = m.inside
     ? isArea
       ? 'Binnen het gebied'
