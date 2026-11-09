@@ -1,5 +1,6 @@
 // Natura2000 areas from the PDOK Natura2000 WFS (RVO), dissolved per area name and simplified.
 import { wfsAll, mapshaper, writeOut } from './lib.mjs';
+import { loadProvinces, provincesOfArea } from './provinces.mjs';
 
 export async function buildNatura2000() {
   console.log('Natura2000');
@@ -16,9 +17,13 @@ export async function buildNatura2000() {
     { 'in.json': input },
   );
   const result = JSON.parse(out['out.json']);
+  const provs = await loadProvinces();
   const features = result.features
     .filter((f) => f.geometry)
-    .map((f) => ({ properties: { id: `n2k-${f.properties.nr}`, name: f.properties.name }, geometry: f.geometry }))
+    .map((f) => ({
+      properties: { id: `n2k-${f.properties.nr}`, name: f.properties.name, prov: provincesOfArea(provs, f.geometry) },
+      geometry: f.geometry,
+    }))
     .sort((a, b) => a.properties.name.localeCompare(b.properties.name, 'nl'));
   await writeOut('natura2000.json', features);
 }

@@ -2,6 +2,7 @@
 // Wikidata only has a point per item; where an area (P2046) is known, it is stored as an
 // equivalent radius `r` in km so a pin anywhere inside a big lake or polder is not punished.
 import { sparql, qid, parsePoint, point, writeOut, inNL } from './lib.mjs';
+import { loadProvinces, provinceOfPoint } from './provinces.mjs';
 
 const GROUPS = [
   {
@@ -60,6 +61,16 @@ export async function buildWater() {
     const vals = dupIds.map((q) => `wd:${q}`).join(' ');
     const rows = await sparql(`SELECT ?s (SAMPLE(?pl) AS ?place) WHERE { VALUES ?s { ${vals} } ?s wdt:P131 ?p. ?p rdfs:label ?pl. FILTER(lang(?pl)="nl") } GROUP BY ?s`);
     for (const r of rows) out.get(qid(r.s)).properties.hint = r.place.replace(/^gemeente\s+/i, '');
+  }
+
+  // Province for lakes and polders (not harbours: those are tied to a city anyway).
+  const provs = await loadProvinces();
+  for (const f of out.values()) {
+    if (f.properties.kind === 'haven') continue;
+    const name = provinceOfPoint(provs, f.geometry.coordinates);
+    if (name) f.properties.prov = [name];
+    // a duplicate hint that only repeats the province adds nothing
+    if (f.properties.hint && f.properties.hint === name) delete f.properties.hint;
   }
 
   const features = [...out.values()].sort((a, b) => a.properties.name.localeCompare(b.properties.name, 'nl'));

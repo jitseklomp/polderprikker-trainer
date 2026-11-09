@@ -2,7 +2,7 @@ import './styles.css';
 import { createMap } from './map.ts';
 import { measure, type LonLat } from './geo.ts';
 import { scoreForDistance, formatKm, verdict } from './scoring.ts';
-import { CATEGORIES, TOWN_LEVELS, categoryById, type Target } from './data.ts';
+import { CATEGORIES, TOWN_LEVELS, categoryById, provinceText, type Target } from './data.ts';
 import { TargetDeck } from './game.ts';
 import { loadStats, recordAttempt, resetStats } from './stats.ts';
 import { readJSON, writeJSON } from './storage.ts';
@@ -83,8 +83,9 @@ function showTarget(t: Target) {
   $('target-cat').textContent = kindLabel;
   $('target-name').textContent = t.name;
   const hint = $('target-hint');
-  hint.hidden = !t.hint;
-  hint.textContent = t.hint ?? '';
+  const text = [provinceText(t), t.hint].filter(Boolean).join(' · ');
+  hint.hidden = !text;
+  hint.textContent = text;
   $('target').hidden = false;
 }
 

@@ -33,6 +33,8 @@ export interface Target {
   id: string;
   name: string;
   hint?: string;
+  /** Province(s) the target lies in, largest share first (Natura 2000, lakes, polders). */
+  prov?: string[];
   /** Equivalent radius in km for point targets that are really areas (lakes, polders). */
   r?: number;
   kind?: string;
@@ -41,7 +43,7 @@ export interface Target {
 }
 
 interface RawFeature {
-  properties: { id: string; name: string; hint?: string; r?: number; kind?: string };
+  properties: { id: string; name: string; hint?: string; prov?: string[]; r?: number; kind?: string };
   geometry: TargetGeometry;
 }
 
@@ -69,9 +71,20 @@ export async function loadCategory(id: string): Promise<Target[]> {
     id: f.properties.id,
     name: f.properties.name,
     hint: f.properties.hint,
+    prov: f.properties.prov,
     r: f.properties.r,
     kind: f.properties.kind,
     category: id,
     geometry: f.geometry,
   }));
+}
+
+/** "in provincie Gelderland", "in de provincies Gelderland en Overijssel", ... */
+export function provinceText(t: Target): string | null {
+  const p = t.prov;
+  if (!p) return null;
+  if (p.length === 0) return t.category === 'natura2000' ? 'in de Noordzee' : null;
+  if (p.length === 1) return `in provincie ${p[0]}`;
+  if (p.length > 3) return 'in meerdere provincies';
+  return `in de provincies ${p.slice(0, -1).join(', ')} en ${p[p.length - 1]}`;
 }
