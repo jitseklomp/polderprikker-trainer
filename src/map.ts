@@ -3,8 +3,12 @@ import 'leaflet/dist/leaflet.css';
 import type { LonLat, TargetGeometry } from './geo.ts';
 import { bboxOf } from './geo.ts';
 
-// Netherlands incl. Wadden and Zeeland, with a little air around it.
-const NL_BOUNDS = L.latLngBounds([50.6, 3.0], [53.75, 7.45]);
+// Where PDOK has imagery: the Netherlands incl. Wadden and Zeeland, with a little air around it.
+const PDOK_BOUNDS = L.latLngBounds([50.6, 3.0], [53.75, 7.45]);
+// How far you can drag: well into Belgium, Germany and the North Sea, so border regions
+// (Groningen, Zuid-Limburg, Zeeuws-Vlaanderen) can be brought to the middle of the screen
+// even with the target card and bottom panel covering part of it.
+const PAN_BOUNDS = L.latLngBounds([49.4, 1.4], [55.2, 9.4]);
 const NL_START = L.latLngBounds([50.75, 3.36], [53.55, 7.23]);
 const PDOK_MIN_ZOOM = 12;
 
@@ -39,7 +43,7 @@ export function createMap(el: HTMLElement): MapApi {
   const map = L.map(el, {
     zoomControl: false,
     attributionControl: false,
-    maxBounds: NL_BOUNDS,
+    maxBounds: PAN_BOUNDS,
     maxBoundsViscosity: 1,
     minZoom: 6,
     maxZoom: 19,
@@ -64,7 +68,7 @@ export function createMap(el: HTMLElement): MapApi {
     minZoom: PDOK_MIN_ZOOM,
     maxZoom: 19,
     maxNativeZoom: 19,
-    bounds: NL_BOUNDS,
+    bounds: PDOK_BOUNDS,
     attribution: 'Luchtfoto: <a href="https://www.pdok.nl/" target="_blank" rel="noopener">PDOK</a> / Beeldmateriaal Nederland (CC BY 4.0)',
   }).addTo(map);
 
