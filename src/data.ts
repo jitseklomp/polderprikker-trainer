@@ -1,4 +1,6 @@
 import type { TargetGeometry } from './geo.ts';
+
+declare const __BUILD_ID__: string;
 import type { TargetKind } from './scoring.ts';
 
 export interface CategoryDef {
@@ -53,7 +55,7 @@ const fileCache = new Map<string, Promise<RawFeature[]>>();
 function loadFile(file: string): Promise<RawFeature[]> {
   let p = fileCache.get(file);
   if (!p) {
-    p = fetch(`${import.meta.env.BASE_URL}data/${file}`)
+    p = fetch(`${import.meta.env.BASE_URL}data/${file}?v=${__BUILD_ID__}`)
       .then((r) => {
         if (!r.ok) throw new Error(`${file}: HTTP ${r.status}`);
         return r.json();
