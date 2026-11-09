@@ -127,7 +127,7 @@ function confirm() {
   renderSession();
 
   const isArea = current.geometry.type !== 'Point' || (current.r ?? 0) > 0;
-  $('verdict').textContent = verdict(score);
+  $('verdict').textContent = verdict(m.km);
   $('distance').textContent = m.inside
     ? isArea
       ? 'Binnen het gebied'

@@ -1,16 +1,32 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { scoreForDistance, formatKm } from '../src/scoring.ts';
+import { scoreForDistance, formatKm, verdict } from '../src/scoring.ts';
 import { measure, haversineKm, type TargetGeometry } from '../src/geo.ts';
 
-test('score curve', () => {
+test('score curve: S-shaped taper, half at 15 km', () => {
   assert.equal(scoreForDistance(0), 1000);
-  assert.equal(scoreForDistance(0.1), 1000);
-  assert.equal(scoreForDistance(0.3), 980);
-  assert.equal(scoreForDistance(1), 914);
-  assert.equal(scoreForDistance(5), 613);
-  assert.equal(scoreForDistance(10), 372);
-  assert.ok(scoreForDistance(50) < 10);
+  assert.equal(scoreForDistance(0.5), 1000);
+  assert.equal(scoreForDistance(2), 994);
+  assert.equal(scoreForDistance(5), 940);
+  assert.equal(scoreForDistance(10), 734);
+  assert.equal(scoreForDistance(15), 500);
+  assert.equal(scoreForDistance(30), 150);
+  assert.equal(scoreForDistance(50), 47);
+  assert.ok(scoreForDistance(100) < 10);
+  // never increases with distance
+  let prev = 1001;
+  for (let d = 0; d <= 200; d += 0.25) {
+    const s = scoreForDistance(d);
+    assert.ok(s <= prev, `not monotonic at ${d}`);
+    prev = s;
+  }
+});
+
+test('verdict is based on distance', () => {
+  assert.equal(verdict(0), 'Midden in de roos');
+  assert.equal(verdict(1.5), 'Heel dichtbij');
+  assert.equal(verdict(12), 'In de buurt');
+  assert.equal(verdict(80), 'Ver mis');
 });
 
 test('haversine Amsterdam - Utrecht is about 35 km', () => {

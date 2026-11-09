@@ -18,11 +18,15 @@ A category is only downloaded once you select it. Town levels are cumulative: Ma
 
 ## Scoring
 
-`score = 1000 × exp(−max(0, d − 0.1) / 10)`, where d is the distance in km.
+`score = 1000 / (1 + (d / 15)^2.5)`, where d is the distance in km.
 
-| distance | 0.3 km | 1 km | 2 km | 5 km | 10 km | 25 km | 50 km |
-|---|---|---|---|---|---|---|---|
-| score | 980 | 914 | 827 | 613 | 372 | 83 | 7 |
+This is an S-curve. The score stays close to 1000 for the first few kilometres, drops to half at 15 km, then tails off gradually.
+
+| distance | 0.5 km | 2 km | 5 km | 10 km | 15 km | 20 km | 30 km | 50 km | 100 km |
+|---|---|---|---|---|---|---|---|---|---|
+| score | 1000 | 994 | 940 | 734 | 500 | 328 | 150 | 47 | 9 |
+
+To tune it, change `HALF_KM` (where you get half the points) or `STEEPNESS` (how sharp the drop around that point is) in `src/scoring.ts`.
 
 For areas, d = 0 if the pin falls inside the polygon; otherwise d is the distance to the nearest edge. Lakes and polders from Wikidata are only points. When Wikidata gives an area (P2046), the target is scored as a circle of that same area.
 
