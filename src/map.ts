@@ -8,7 +8,7 @@ const PDOK_BOUNDS = L.latLngBounds([50.6, 3.0], [53.75, 7.45]);
 // How far you can drag: well into Belgium, Germany and the North Sea, so border regions
 // (Groningen, Zuid-Limburg, Zeeuws-Vlaanderen) can be brought to the middle of the screen
 // even with the target card and bottom panel covering part of it.
-const PAN_BOUNDS = L.latLngBounds([49.4, 1.4], [56.0, 9.4]); // north edge clears Doggersbank (55.65 N)
+const PAN_BOUNDS = L.latLngBounds([48.05, 1.4], [56.0, 9.4]); // south: 2.7° (~300 km) below Eijsden; north clears Doggersbank (55.65 N)
 const NL_START = L.latLngBounds([50.75, 3.36], [53.55, 7.23]);
 const PDOK_MIN_ZOOM = 12;
 
